@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .game-container {
+            text-align: center;
+        }
+        .word {
+            font-size: 2em;
+            margin: 20px;
+        }
+        .pinyin {
+            font-size: 1em;
+            color: #888;
+        }
+        .input-container {
+            margin-top: 20px;
+        }
+        .input-container input {
+            font-size: 1.5em;
+            padding: 10px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="word-container" id="word-container"></div>
+        <div class="input-container">
+            <input type="text" id="input" placeholder="Type the pinyin here...">
+        </div>
+    </div>
+    <script src="ciku.js"></script>
+    <script src="generate.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
