@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打字游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            color: #555;
+        }
+        .stat-item {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+        .word-display {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            min-height: 60px;
+            letter-spacing: 2px;
+            color: #333;
+        }
+        .word-display .highlight {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 0 5px;
+            border-radius: 3px;
+        }
+        .word-display .wrong {
+            color: #e74c3c;
+            text-decoration: line-through;
+        }
+        .input-area {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            font-size: 1.5em;
+            padding: 15px 25px;
+            width: 70%;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #667eea;
+        }
+        button {
+            font-size: 1.2em;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 1.2em;
+            height: 30px;
+        }
+        .message.success {
+            color: #2ecc71;
+        }
+        .message.error {
+            color: #e74c3c;
+        }
+        .word-list {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            text-align: left;
+        }
+        .word-list h3 {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        .word-list ul {
+            list-style: none;
+        }
+        .word-list li {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .word-list li.correct {
+            border-left-color: #2ecc71;
+            background: #e8f8f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎮 打字游戏</h1>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div>得分</div>
+                <div id="score">0</div>
+            </div>
+            <div class="stat-item">
+                <div>时间</div>
+                <div id="time">60</div>
+            </div>
+            <div class="stat-item">
+                <div>速度</div>
+                <div id="speed">0</div>
+            </div>
+        </div>
+        
+        <div class="word-display" id="wordDisplay">准备开始...</div>
+        
+        <div class="input-area">
+            <input type="text" id="inputField" placeholder="输入单词..." disabled>
+        </div>
+        
+        <button id="startBtn">开始游戏</button>
+        
+        <div class="message" id="message"></div>
+        
+        <div class="word-list">
+            <h3>已完成的单词:</h3>
+            <ul id="wordList"></ul>
+        </div>
+    </div>
+
+    <script>
+        // 单词库
+        const words = [
+            'apple', 'banana', 'orange', 'grape', 'melon',
+            'hello', 'world', 'coding', 'script', 'style',
+            'html', 'css', 'javascript', 'browser', 'internet',
+            'computer', 'keyboard', 'mouse', 'screen', 'pixel',
+            'python', 'java', 'ruby', 'swift', 'rust',
+            'react', 'vue', 'angular', 'node', 'express',
+            'database', 'server', 'client', 'network', 'cloud'
+        ];
+
+        // 游戏状态
+        let score = 0;
+        let timeLeft = 60;
+        let timer = null;
+        let currentWord = '';
+        let isPlaying = false;
+        let wordsCompleted = [];
+
+        // DOM 元素
+        const wordDisplay = document.getElementById('wordDisplay');
+        const inputField = document.getElementById('inputField');
+        const scoreEl = document.getElementById('score');
+        const timeEl = document.getElementById('time');
+        const speedEl = document.getElementById('speed');
+        const startBtn = document.getElementById('startBtn');
+        const messageEl = document.getElementById('message');
+        const wordListEl = document.getElementById('wordList');
+
+        // 随机获取一个单词
+        function getRandomWord() {
+            const index = Math.floor(Math.random() * words.length);
+            return words[index];
+        }
+
+        // 显示当前单词
+        function displayWord() {
+            currentWord = getRandomWord();
+            wordDisplay.innerHTML = currentWord;
+            inputField.value = '';
+            inputField.focus();
+        }
+
+        // 更新显示（高亮已输入部分）
+        function updateDisplay(input) {
+            const matchLength = input.length;
+            const matched = input;
+            const remaining = currentWord.slice(matchLength);
+            
+            wordDisplay.innerHTML = `
+                <span class="highlight">${matched}</span>${remaining}
+            `;
+        }
+
+        // 显示消息
+        function showMessage(text, type) {
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type;
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            scoreEl.textContent = score;
+            timeEl.textContent = timeLeft;
+            
+            if (isPlaying) {
+                const wordsPerMinute = Math.round((score / (60 - timeLeft)) * 60);
+                speedEl.textContent = wordsPerMinute;
+            } else {
+                speedEl.textContent = '0';
+            }
+        }
+
+        // 处理输入
+        inputField.addEventListener('input', function(e) {
+            if (!isPlaying) return;
+            
+            const input = e.target.value.toLowerCase();
+            updateDisplay(input);
+            
+            // 检查是否完成
+            if (input === currentWord) {
+                score++;
+                wordsCompleted.push(currentWord);
+                wordListEl.innerHTML = wordsCompleted.map(word => 
+                    `<li class="correct">${word}</li>`
+                ).join('');
+                showMessage('✓ 正确!', 'success');
+                displayWord();
+                updateStats();
+            }
+        });
+
+        // 处理回车键
+        inputField.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && isPlaying) {
+                if (inputField.value.toLowerCase() === currentWord) {
+                    // 已经处理过了
+                } else if (inputField.value.length > 0) {
+                    showMessage('✕ 不正确!', 'error');
+                }
+                updateDisplay(inputField.value);
+            }
+        });
+
+        // 开始游戏
+        startBtn.addEventListener('click', function() {
+            if (isPlaying) return;
+            
+            // 重置游戏状态
+            score = 0;
+            timeLeft = 60;
+            wordsCompleted = [];
+            isPlaying = true;
+            
+            // 更新UI
+            startBtn.textContent = '游戏中...';
+            startBtn.disabled = true;
+            inputField.disabled = false;
+            wordListEl.innerHTML = '';
+            messageEl.textContent = '';
+            
+            // 开始游戏
+            displayWord();
+            updateStats();
+            
+            // 启动计时器
+            timer = setInterval(function() {
+                timeLeft--;
+                updateStats();
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        });
+
+        // 结束游戏
+        function endGame() {
+            clearInterval(timer);
+            isPlaying = false;
+            
+            startBtn.textContent = '重新开始';
+            startBtn.disabled = false;
+            inputField.disabled = true;
+            
+            const wordsPerMinute = Math.round((score / 60) * 60);
+            showMessage(`游戏结束! 最终得分: ${score}, 速度: ${wordsPerMinute} 字/分`, 'success');
+            
+            // 显示完成列表
+            wordListEl.innerHTML = '<li>游戏结束 - 查看上方完成记录</li>';
+        }
+
+        // 点击蓝色正方形跳过当前单词
+        wordDisplay.addEventListener('click', function() {
+            if (isPlaying) {
+                showMessage('跳过! +0分', 'error');
+                displayWord();
+            }
+        });
+    </script>
+</body>
+</html>
